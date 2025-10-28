@@ -5,13 +5,14 @@ module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('leaderboard')
 		.setDescription('View the server leaderboard')
-		.addIntegerOption(option =>
+		.addIntegerOption((option) =>
 			option
 				.setName('limit')
 				.setDescription('Number of users to display (default: 10)')
 				.setMinValue(5)
 				.setMaxValue(25)
-				.setRequired(false)),
+				.setRequired(false),
+		),
 	async execute(interaction) {
 		const limit = interaction.options.getInteger('limit') || 10;
 		const guildId = interaction.guild.id;
@@ -20,7 +21,9 @@ module.exports = {
 		const leaderboard = getLeaderboard(guildId, limit);
 
 		if (leaderboard.length === 0) {
-			await interaction.reply('No users have gained XP yet! Start chatting to earn levels!');
+			await interaction.reply(
+				'No users have gained XP yet! Start chatting to earn levels!',
+			);
 			return;
 		}
 
@@ -28,7 +31,8 @@ module.exports = {
 		let description = '';
 		for (let i = 0; i < leaderboard.length; i++) {
 			const user = leaderboard[i];
-			const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `**${i + 1}.**`;
+			const medal =
+				i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `**${i + 1}.**`;
 
 			// Try to get user from Discord
 			let username = `User ${user.user_id}`;
@@ -36,7 +40,7 @@ module.exports = {
 				const discordUser = await interaction.client.users.fetch(user.user_id);
 				username = discordUser.username;
 			}
-			catch (error) {
+			catch {
 				// User might have left the server
 			}
 
@@ -45,7 +49,7 @@ module.exports = {
 
 		// Create embed
 		const embed = new EmbedBuilder()
-			.setColor(0xFFD700)
+			.setColor(0xffd700)
 			.setTitle('🏆 Server Leaderboard')
 			.setDescription(description)
 			.setFooter({ text: `Showing top ${leaderboard.length} users` })

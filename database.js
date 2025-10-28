@@ -13,6 +13,8 @@ db.exec(`
 		xp INTEGER DEFAULT 0,
 		level INTEGER DEFAULT 1,
 		last_message INTEGER DEFAULT 0,
+		voice_join_time INTEGER DEFAULT 0,
+		voice_total_time INTEGER DEFAULT 0,
 		UNIQUE(user_id, guild_id)
 	)
 `);
@@ -20,8 +22,10 @@ db.exec(`
 // Prepared statements for better performance
 const statements = {
 	getUser: db.prepare('SELECT * FROM users WHERE user_id = ? AND guild_id = ?'),
-	createUser: db.prepare('INSERT OR IGNORE INTO users (id, user_id, guild_id, xp, level, last_message) VALUES (?, ?, ?, 0, 1, 0)'),
+	createUser: db.prepare('INSERT OR IGNORE INTO users (id, user_id, guild_id, xp, level, last_message, voice_join_time, voice_total_time) VALUES (?, ?, ?, 0, 1, 0, 0, 0)'),
 	updateUser: db.prepare('UPDATE users SET xp = ?, level = ?, last_message = ? WHERE user_id = ? AND guild_id = ?'),
+	updateVoiceJoinTime: db.prepare('UPDATE users SET voice_join_time = ? WHERE user_id = ? AND guild_id = ?'),
+	updateVoiceStats: db.prepare('UPDATE users SET voice_total_time = ?, xp = ?, level = ?, voice_join_time = 0 WHERE user_id = ? AND guild_id = ?'),
 	getLeaderboard: db.prepare('SELECT * FROM users WHERE guild_id = ? ORDER BY xp DESC LIMIT ?'),
 	getUserRank: db.prepare('SELECT COUNT(*) + 1 as rank FROM users WHERE guild_id = ? AND xp > (SELECT xp FROM users WHERE user_id = ? AND guild_id = ?)'),
 };
@@ -59,6 +63,27 @@ function xpForNextLevel(currentLevel) {
 	return Math.pow((currentLevel) * 10, 2);
 }
 
+// Voice channel tracking functions
+function setVoiceJoinTime(userId, guildId, joinTime) {
+	statements.updateVoiceJoinTime.run(joinTime, userId, guildId);
+}
+
+function updateVoiceTime(userId, guildId, timeSpent) {
+	const userData = getUser(userId, guildId);
+	const newVoiceTotal = userData.voice_total_time + timeSpent;
+
+	// Award 50 XP per hour (timeSpent is in milliseconds)
+	const hoursSpent = timeSpent / (1000 * 60 * 60);
+	const xpGain = Math.floor(hoursSpent * 50);
+
+	const newXp = userData.xp + xpGain;
+	const newLevel = calculateLevel(newXp);
+
+	statements.updateVoiceStats.run(newVoiceTotal, newXp, newLevel, userId, guildId);
+
+	return { oldLevel: userData.level, newLevel, xpGain };
+}
+
 module.exports = {
 	db,
 	getUser,
@@ -67,4 +92,6 @@ module.exports = {
 	getUserRank,
 	calculateLevel,
 	xpForNextLevel,
+	setVoiceJoinTime,
+	updateVoiceTime,
 };

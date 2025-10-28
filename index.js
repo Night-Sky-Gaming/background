@@ -3,7 +3,6 @@ const path = require('node:path');
 
 const { Client, Collection, GatewayIntentBits } = require('discord.js');
 const { token } = require('./config.json');
-const { db } = require('./database.js');
 
 // Create a new client instance
 const client = new Client({
@@ -12,6 +11,7 @@ const client = new Client({
 		GatewayIntentBits.GuildMembers,
 		GatewayIntentBits.GuildMessages,
 		GatewayIntentBits.MessageContent,
+		GatewayIntentBits.GuildVoiceStates,
 	],
 });
 
@@ -19,7 +19,9 @@ const client = new Client({
 client.commands = new Collection();
 
 const foldersPath = path.join(__dirname, 'commands');
-const commandFiles = fs.readdirSync(foldersPath).filter(file => file.endsWith('.js'));
+const commandFiles = fs
+	.readdirSync(foldersPath)
+	.filter((file) => file.endsWith('.js'));
 
 for (const file of commandFiles) {
 	const filePath = path.join(foldersPath, file);
@@ -37,7 +39,9 @@ for (const file of commandFiles) {
 
 // Load events
 const eventsPath = path.join(__dirname, 'events');
-const eventFiles = fs.readdirSync(eventsPath).filter(file => file.endsWith('.js'));
+const eventFiles = fs
+	.readdirSync(eventsPath)
+	.filter((file) => file.endsWith('.js'));
 
 for (const file of eventFiles) {
 	const filePath = path.join(eventsPath, file);

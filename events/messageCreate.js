@@ -2,9 +2,8 @@ const { Events } = require('discord.js');
 const { getUser, updateUser, calculateLevel } = require('../database.js');
 
 // XP settings
-const XP_PER_MESSAGE = 15; // Base XP per message
-const XP_RANDOM_BONUS = 10; // Random bonus 0-10 XP
-const XP_COOLDOWN = 60000; // 1 minute cooldown between XP gains (prevents spam)
+// 1 XP per message
+const XP_PER_MESSAGE = 1;
 
 module.exports = {
 	name: Events.MessageCreate,
@@ -18,27 +17,49 @@ module.exports = {
 		// Get user from database
 		const userData = getUser(userId, guildId);
 
-		// Check cooldown
-		const now = Date.now();
-		if (now - userData.last_message < XP_COOLDOWN) {
-			return; // User is on cooldown
-		}
-
-		// Calculate XP gain (random between XP_PER_MESSAGE and XP_PER_MESSAGE + XP_RANDOM_BONUS)
-		const xpGain = Math.floor(Math.random() * (XP_RANDOM_BONUS + 1)) + XP_PER_MESSAGE;
+		// Calculate XP gain
+		const xpGain = XP_PER_MESSAGE;
 		const newXp = userData.xp + xpGain;
 		const newLevel = calculateLevel(newXp);
 		const oldLevel = userData.level;
 
 		// Update user in database
+		const now = Date.now();
 		updateUser(userId, guildId, newXp, newLevel, now);
 
 		// Check if user leveled up
 		if (newLevel > oldLevel) {
 			try {
-				await message.channel.send(
-					`🎉 Congratulations ${message.author}! You've reached **Level ${newLevel}**!`,
-				);
+				// Assign '+' role at level 5
+				if (newLevel === 5) {
+					const role = message.guild.roles.cache.find((r) => r.name === '+');
+					if (role) {
+						try {
+							const member = await message.guild.members.fetch(userId);
+							await member.roles.add(role);
+							await message.channel.send(
+								`🎉 Congratulations ${message.author}! You've reached **Level ${newLevel}** and earned the **${role.name}** role!`,
+							);
+						}
+						catch (roleError) {
+							console.error('Error assigning + role:', roleError);
+							await message.channel.send(
+								`🎉 Congratulations ${message.author}! You've reached **Level ${newLevel}**! (Unable to assign role)`,
+							);
+						}
+					}
+					else {
+						console.warn('Role "+" not found in guild:', message.guild.name);
+						await message.channel.send(
+							`🎉 Congratulations ${message.author}! You've reached **Level ${newLevel}**! (Role "+" not found)`,
+						);
+					}
+				}
+				else {
+					await message.channel.send(
+						`🎉 Congratulations ${message.author}! You've reached **Level ${newLevel}**!`,
+					);
+				}
 			}
 			catch (error) {
 				console.error('Error sending level up message:', error);
