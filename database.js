@@ -19,6 +19,21 @@ db.exec(`
 	)
 `);
 
+// Migration: Add voice tracking columns if they don't exist
+try {
+	db.exec(`ALTER TABLE users ADD COLUMN voice_join_time INTEGER DEFAULT 0`);
+	console.log('Added voice_join_time column');
+} catch (error) {
+	// Column already exists, ignore error
+}
+
+try {
+	db.exec(`ALTER TABLE users ADD COLUMN voice_total_time INTEGER DEFAULT 0`);
+	console.log('Added voice_total_time column');
+} catch (error) {
+	// Column already exists, ignore error
+}
+
 // Prepared statements for better performance
 const statements = {
 	getUser: db.prepare('SELECT * FROM users WHERE user_id = ? AND guild_id = ?'),
