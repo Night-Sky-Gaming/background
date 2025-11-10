@@ -4,6 +4,11 @@ const { getUser, updateUser, calculateLevel } = require('../database.js');
 // XP settings
 // 1 XP per message
 const XP_PER_MESSAGE = 1;
+// Cooldown in milliseconds (60 seconds = 60000ms)
+const XP_COOLDOWN = 60000;
+
+// Map to track last XP gain timestamp for each user
+const xpCooldowns = new Map();
 
 module.exports = {
 	name: Events.MessageCreate,
@@ -13,6 +18,19 @@ module.exports = {
 
 		const userId = message.author.id;
 		const guildId = message.guild.id;
+
+		// Check cooldown
+		const cooldownKey = `${userId}-${guildId}`;
+		const now = Date.now();
+		const lastXpTime = xpCooldowns.get(cooldownKey);
+
+		if (lastXpTime && now - lastXpTime < XP_COOLDOWN) {
+			// User is still on cooldown, don't award XP
+			return;
+		}
+
+		// Update cooldown timestamp
+		xpCooldowns.set(cooldownKey, now);
 
 		// Get user from database
 		const userData = getUser(userId, guildId);
@@ -24,7 +42,6 @@ module.exports = {
 		const oldLevel = userData.level;
 
 		// Update user in database
-		const now = Date.now();
 		updateUser(userId, guildId, newXp, newLevel, now);
 
 		// Check if user leveled up
