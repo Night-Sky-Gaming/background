@@ -1,5 +1,5 @@
 const { REST, Routes } = require('discord.js');
-const { token, guildIds } = require('./config.json');
+const { token, guildId } = require('./config.json');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -31,14 +31,13 @@ const rest = new REST().setToken(token);
 		// Get the client user to access the application ID
 		const clientId = await rest.get(Routes.user()).then(user => user.id);
 
-		// Deploy commands to all specified guilds
-		for (const guildId of guildIds) {
-			const data = await rest.put(
-				Routes.applicationGuildCommands(clientId, guildId),
-				{ body: commands },
-			);
-			console.log(`Successfully reloaded ${data.length} application (/) commands for guild ${guildId}.`);
-		}
+		// Deploy commands to guild (instant) instead of globally (takes up to 1 hour)
+		const data = await rest.put(
+			Routes.applicationGuildCommands(clientId, guildId),
+			{ body: commands },
+		);
+
+		console.log(`Successfully reloaded ${data.length} application (/) commands for guild ${guildId}.`);
 	}
 	catch (error) {
 		console.error(error);
