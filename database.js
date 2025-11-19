@@ -99,6 +99,34 @@ function updateVoiceTime(userId, guildId, timeSpent) {
 	return { oldLevel: userData.level, newLevel, xpGain };
 }
 
+// Helper function to format voice time from milliseconds
+function formatVoiceTime(milliseconds) {
+	const totalSeconds = Math.floor(milliseconds / 1000);
+	const hours = Math.floor(totalSeconds / 3600);
+	const minutes = Math.floor((totalSeconds % 3600) / 60);
+	const seconds = totalSeconds % 60;
+
+	if (hours > 0) {
+		return `${hours}h ${minutes}m`;
+	} else if (minutes > 0) {
+		return `${minutes}m ${seconds}s`;
+	} else {
+		return `${seconds}s`;
+	}
+}
+
+// Get voice time statistics for a user
+function getVoiceTimeStats(userId, guildId) {
+	const userData = getUser(userId, guildId);
+	return {
+		totalMilliseconds: userData.voice_total_time,
+		totalSeconds: Math.floor(userData.voice_total_time / 1000),
+		totalMinutes: Math.floor(userData.voice_total_time / (1000 * 60)),
+		totalHours: userData.voice_total_time / (1000 * 60 * 60),
+		formatted: formatVoiceTime(userData.voice_total_time),
+	};
+}
+
 module.exports = {
 	db,
 	getUser,
@@ -109,4 +137,6 @@ module.exports = {
 	xpForNextLevel,
 	setVoiceJoinTime,
 	updateVoiceTime,
+	formatVoiceTime,
+	getVoiceTimeStats,
 };
