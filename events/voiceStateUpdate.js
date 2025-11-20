@@ -28,14 +28,28 @@ module.exports = {
 				const now = Date.now();
 				const timeSpent = now - userData.voice_join_time;
 
-				const result = updateVoiceTime(userId, guildId, timeSpent);
+				// Check if user was alone in the channel
+				// Count non-bot members in the channel (excluding the user who just left)
+				const membersInChannel = oldState.channel.members.filter(
+					(member) => !member.user.bot && member.id !== userId,
+				).size;
+				const wasAlone = membersInChannel === 0;
+
+				const result = updateVoiceTime(userId, guildId, timeSpent, wasAlone);
 
 				const username = oldState.member.user.tag;
 				const channelName = oldState.channel.name;
 				const timeInMinutes = (timeSpent / (1000 * 60)).toFixed(2);
-				console.log(
-					`[Voice] ${username} left ${channelName} after ${timeInMinutes} minutes, gained ${result.xpGain} XP`,
-				);
+				
+				if (wasAlone) {
+					console.log(
+						`[Voice] ${username} left ${channelName} after ${timeInMinutes} minutes, gained 0 XP (alone in channel)`,
+					);
+				} else {
+					console.log(
+						`[Voice] ${username} left ${channelName} after ${timeInMinutes} minutes, gained ${result.xpGain} XP`,
+					);
+				}
 
 				// Check if user leveled up
 				if (result.newLevel > result.oldLevel) {
