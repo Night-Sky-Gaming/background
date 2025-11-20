@@ -5,6 +5,10 @@ const {
 	updateVoiceTime,
 } = require('../database.js');
 
+// Track if users were ever with others during their voice session
+// Key: `${guildId}-${userId}`, Value: boolean (true if they were with others at any point)
+const wasEverWithOthers = new Map();
+
 module.exports = {
 	name: Events.VoiceStateUpdate,
 	async execute(oldState, newState) {
@@ -18,6 +22,25 @@ module.exports = {
 			const username = newState.member.user.tag;
 			const channelName = newState.channel.name;
 			console.log(`[Voice] ${username} joined ${channelName}`);
+
+			// Check if there are other non-bot users in the channel
+			const otherMembers = newState.channel.members.filter(
+				(member) => !member.user.bot && member.id !== userId,
+			).size;
+
+			const sessionKey = `${guildId}-${userId}`;
+			// Initialize tracking - if others are present, mark as true
+			wasEverWithOthers.set(sessionKey, otherMembers > 0);
+
+			// For all other users already in the channel, mark that they are now with others
+			if (otherMembers > 0) {
+				newState.channel.members.forEach((member) => {
+					if (!member.user.bot && member.id !== userId) {
+						const otherSessionKey = `${guildId}-${member.id}`;
+						wasEverWithOthers.set(otherSessionKey, true);
+					}
+				});
+			}
 		}
 		// User left a voice channel
 		else if (oldState.channelId && !newState.channelId) {
@@ -28,20 +51,20 @@ module.exports = {
 				const now = Date.now();
 				const timeSpent = now - userData.voice_join_time;
 
-				// Check if user was alone in the channel
-				// Count non-bot members in the channel (excluding the user who just left)
-				const membersInChannel = oldState.channel.members.filter(
-					(member) => !member.user.bot && member.id !== userId,
-				).size;
-				const wasAlone = membersInChannel === 0;
+				// Check if user was ever with others during their session
+				const sessionKey = `${guildId}-${userId}`;
+				const wasWithOthers = wasEverWithOthers.get(sessionKey) || false;
+				
+				// Clean up the tracking
+				wasEverWithOthers.delete(sessionKey);
 
-				const result = updateVoiceTime(userId, guildId, timeSpent, wasAlone);
+				const result = updateVoiceTime(userId, guildId, timeSpent, !wasWithOthers);
 
 				const username = oldState.member.user.tag;
 				const channelName = oldState.channel.name;
 				const timeInMinutes = (timeSpent / (1000 * 60)).toFixed(2);
 				
-				if (wasAlone) {
+				if (!wasWithOthers) {
 					console.log(
 						`[Voice] ${username} left ${channelName} after ${timeInMinutes} minutes, gained 0 XP (alone in channel)`,
 					);
