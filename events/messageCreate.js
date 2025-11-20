@@ -54,27 +54,27 @@ module.exports = {
 						try {
 							const member = await message.guild.members.fetch(userId);
 							await member.roles.add(role);
-							await message.channel.send(
-								`🎉 Congratulations ${message.author}! You've reached **Level ${newLevel}** and earned the **${role.name}** role!`,
+							await message.author.send(
+								`🎉 Congratulations! You've reached **Level ${newLevel}** and earned the **${role.name}** role in **${message.guild.name}**!`,
 							);
 						}
 						catch (roleError) {
 							console.error('Error assigning + role:', roleError);
-							await message.channel.send(
-								`🎉 Congratulations ${message.author}! You've reached **Level ${newLevel}**! (Unable to assign role)`,
+							await message.author.send(
+								`🎉 Congratulations! You've reached **Level ${newLevel}** in **${message.guild.name}**! (Unable to assign role)`,
 							);
 						}
 					}
 					else {
 						console.warn('Role "+" not found in guild:', message.guild.name);
-						await message.channel.send(
-							`🎉 Congratulations ${message.author}! You've reached **Level ${newLevel}**! (Role "+" not found)`,
+						await message.author.send(
+							`🎉 Congratulations! You've reached **Level ${newLevel}** in **${message.guild.name}**! (Role "+" not found)`,
 						);
 					}
 				}
 				else {
-					await message.channel.send(
-						`🎉 Congratulations ${message.author}! You've reached **Level ${newLevel}**!`,
+					await message.author.send(
+						`🎉 Congratulations! You've reached **Level ${newLevel}** in **${message.guild.name}**!`,
 					);
 				}
 			}

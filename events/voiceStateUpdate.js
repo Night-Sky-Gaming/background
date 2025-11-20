@@ -78,51 +78,40 @@ module.exports = {
 				if (result.newLevel > result.oldLevel) {
 					try {
 						const member = await newState.guild.members.fetch(userId);
-						const channel =
-							newState.guild.systemChannel ||
-							newState.guild.channels.cache.find(
-								(ch) =>
-									ch.isTextBased() &&
-									ch
-										.permissionsFor(newState.guild.members.me)
-										.has('SendMessages'),
-							);
 
-						if (channel) {
-							// Assign '+' role at level 5
-							if (result.newLevel === 5) {
-								const role = newState.guild.roles.cache.find(
-									(r) => r.name === '+',
-								);
-								if (role) {
-									try {
-										await member.roles.add(role);
-										await channel.send(
-											`🎉 Congratulations <@${userId}>! You've reached **Level ${result.newLevel}** from voice chat and earned the **${role.name}** role!`,
-										);
-									}
-									catch (roleError) {
-										console.error('Error assigning + role:', roleError);
-										await channel.send(
-											`🎉 Congratulations <@${userId}>! You've reached **Level ${result.newLevel}** from voice chat! (Unable to assign role)`,
-										);
-									}
-								}
-								else {
-									console.warn(
-										'Role "+" not found in guild:',
-										newState.guild.name,
+						// Assign '+' role at level 5
+						if (result.newLevel === 5) {
+							const role = newState.guild.roles.cache.find(
+								(r) => r.name === '+',
+							);
+							if (role) {
+								try {
+									await member.roles.add(role);
+									await member.send(
+										`🎉 Congratulations! You've reached **Level ${result.newLevel}** from voice chat and earned the **${role.name}** role in **${newState.guild.name}**!`,
 									);
-									await channel.send(
-										`🎉 Congratulations <@${userId}>! You've reached **Level ${result.newLevel}** from voice chat! (Role "+" not found)`,
+								}
+								catch (roleError) {
+									console.error('Error assigning + role:', roleError);
+									await member.send(
+										`🎉 Congratulations! You've reached **Level ${result.newLevel}** from voice chat in **${newState.guild.name}**! (Unable to assign role)`,
 									);
 								}
 							}
 							else {
-								await channel.send(
-									`🎉 Congratulations <@${userId}>! You've reached **Level ${result.newLevel}** from voice chat!`,
+								console.warn(
+									'Role "+" not found in guild:',
+									newState.guild.name,
+								);
+								await member.send(
+									`🎉 Congratulations! You've reached **Level ${result.newLevel}** from voice chat in **${newState.guild.name}**! (Role "+" not found)`,
 								);
 							}
+						}
+						else {
+							await member.send(
+								`🎉 Congratulations! You've reached **Level ${result.newLevel}** from voice chat in **${newState.guild.name}**!`,
+							);
 						}
 					}
 					catch (error) {
