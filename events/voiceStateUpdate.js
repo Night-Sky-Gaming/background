@@ -17,7 +17,7 @@ module.exports = {
 			setVoiceJoinTime(userId, guildId, now);
 			const username = newState.member.user.tag;
 			const channelName = newState.channel.name;
-			console.log(`[Voice] ${username} joined ${channelName}`);
+			console.log(`[VOICE] ${username} joined ${channelName}`);
 		}
 		// User left a voice channel
 		else if (oldState.channelId && !newState.channelId) {
@@ -34,7 +34,7 @@ module.exports = {
 				const channelName = oldState.channel.name;
 				const timeInMinutes = (timeSpent / (1000 * 60)).toFixed(2);
 				console.log(
-					`[Voice] ${username} left ${channelName} after ${timeInMinutes} minutes, gained ${result.xpGain} XP`,
+					`[VOICE] ${username} left ${channelName} after ${timeInMinutes} minutes, gained ${result.xpGain} XP`,
 				);
 
 				// Check if user leveled up
@@ -104,7 +104,7 @@ module.exports = {
 			const oldChannelName = oldState.channel.name;
 			const newChannelName = newState.channel.name;
 			console.log(
-				`[Voice] ${username} switched from ${oldChannelName} to ${newChannelName}`,
+				`[VOICE] ${username} switched from ${oldChannelName} to ${newChannelName}`,
 			);
 			// Don't reset the timer when switching channels
 		}
