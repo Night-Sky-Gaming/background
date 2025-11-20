@@ -83,13 +83,14 @@ function setVoiceJoinTime(userId, guildId, joinTime) {
 	statements.updateVoiceJoinTime.run(joinTime, userId, guildId);
 }
 
-function updateVoiceTime(userId, guildId, timeSpent) {
+function updateVoiceTime(userId, guildId, timeSpent, wasAlone = false) {
 	const userData = getUser(userId, guildId);
 	const newVoiceTotal = userData.voice_total_time + timeSpent;
 
 	// Award 50 XP per hour (timeSpent is in milliseconds)
+	// But only if the user wasn't alone in the channel
 	const hoursSpent = timeSpent / (1000 * 60 * 60);
-	const xpGain = Math.floor(hoursSpent * 50);
+	const xpGain = wasAlone ? 0 : Math.floor(hoursSpent * 50);
 
 	const newXp = userData.xp + xpGain;
 	const newLevel = calculateLevel(newXp);
