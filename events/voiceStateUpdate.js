@@ -21,7 +21,7 @@ module.exports = {
 			setVoiceJoinTime(userId, guildId, now);
 			const username = newState.member.user.tag;
 			const channelName = newState.channel.name;
-			console.log(`[Voice] ${username} joined ${channelName}`);
+			console.log(`[VOICE] ${username} joined ${channelName}`);
 
 			// Check if there are other non-bot users in the channel
 			const otherMembers = newState.channel.members.filter(
@@ -66,11 +66,11 @@ module.exports = {
 				
 				if (!wasWithOthers) {
 					console.log(
-						`[Voice] ${username} left ${channelName} after ${timeInMinutes} minutes, gained 0 XP (alone in channel)`,
+						`[VOICE] ${username} left ${channelName} after ${timeInMinutes} minutes, gained 0 XP (alone in channel)`,
 					);
 				} else {
 					console.log(
-						`[Voice] ${username} left ${channelName} after ${timeInMinutes} minutes, gained ${result.xpGain} XP`,
+						`[VOICE] ${username} left ${channelName} after ${timeInMinutes} minutes, gained ${result.xpGain} XP`,
 					);
 				}
 
