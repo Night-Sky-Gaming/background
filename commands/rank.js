@@ -5,6 +5,7 @@ module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('rank')
 		.setDescription('Check your or another user\'s level and rank')
+		.setDefaultMemberPermissions(null)
 		.addUserOption((option) =>
 			option
 				.setName('user')

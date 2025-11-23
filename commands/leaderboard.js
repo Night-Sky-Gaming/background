@@ -5,6 +5,7 @@ module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('leaderboard')
 		.setDescription('View the server leaderboard')
+		.setDefaultMemberPermissions(null)
 		.addIntegerOption((option) =>
 			option
 				.setName('limit')
