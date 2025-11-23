@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
 const { getUser, getUserRank, xpForNextLevel } = require('../database.js');
 
 module.exports = {
@@ -55,6 +55,18 @@ module.exports = {
 			)
 			.setTimestamp();
 
-		await interaction.reply({ embeds: [embed] });
+		try {
+			await interaction.user.send({ embeds: [embed] });
+			await interaction.reply({
+				content: 'I\'ve sent your rank info to your DMs! 📈',
+				flags: MessageFlags.Ephemeral,
+			});
+		}
+		catch (error) {
+			await interaction.reply({
+				content: 'I couldn\'t send you a DM. Please check that you have DMs enabled for this server.',
+				flags: MessageFlags.Ephemeral,
+			});
+		}
 	},
 };

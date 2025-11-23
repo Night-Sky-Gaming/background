@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+	const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
 const { getLeaderboard } = require('../database.js');
 
 module.exports = {
@@ -22,9 +22,10 @@ module.exports = {
 		const leaderboard = getLeaderboard(guildId, limit);
 
 		if (leaderboard.length === 0) {
-			await interaction.reply(
-				'No users have gained XP yet! Start chatting to earn levels!',
-			);
+			await interaction.reply({
+				content: 'No users have gained XP yet! Start chatting to earn levels!',
+				flags: MessageFlags.Ephemeral,
+			});
 			return;
 		}
 
@@ -56,6 +57,18 @@ module.exports = {
 			.setFooter({ text: `Showing top ${leaderboard.length} users` })
 			.setTimestamp();
 
-		await interaction.reply({ embeds: [embed] });
+		try {
+			await interaction.user.send({ embeds: [embed] });
+			await interaction.reply({
+				content: 'I\'ve sent the leaderboard to your DMs! 📊',
+				flags: MessageFlags.Ephemeral,
+			});
+		}
+		catch (error) {
+			await interaction.reply({
+				content: 'I couldn\'t send you a DM. Please check that you have DMs enabled for this server.',
+				flags: MessageFlags.Ephemeral,
+			});
+		}
 	},
 };
