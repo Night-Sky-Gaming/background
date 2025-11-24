@@ -57,8 +57,12 @@ module.exports = {
 
 		try {
 			await interaction.user.send({ embeds: [embed] });
+			const isOtherUser = targetUser.id !== interaction.user.id;
+			const message = isOtherUser
+				? `I've sent ${targetUser.username}'s rank info to your DMs! 📈`
+				: 'I\'ve sent your rank info to your DMs! 📈';
 			await interaction.reply({
-				content: 'I\'ve sent your rank info to your DMs! 📈',
+				content: message,
 				flags: MessageFlags.Ephemeral,
 			});
 		}
