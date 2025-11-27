@@ -80,6 +80,8 @@ function xpForNextLevel(currentLevel) {
 
 // Voice channel tracking functions
 function setVoiceJoinTime(userId, guildId, joinTime) {
+	// Ensure user exists in database before updating join time
+	getUser(userId, guildId);
 	statements.updateVoiceJoinTime.run(joinTime, userId, guildId);
 }
 
