@@ -3,6 +3,7 @@ const {
 	getUser,
 	setVoiceJoinTime,
 	updateVoiceTime,
+	updateLastActivity,
 } = require('../database.js');
 
 // Track if users were ever with others during their voice session
@@ -19,6 +20,10 @@ module.exports = {
 		if (!oldState.channelId && newState.channelId) {
 			const now = Date.now();
 			setVoiceJoinTime(userId, guildId, now);
+			
+			// Update last_activity when joining voice
+			updateLastActivity(userId, guildId, now);
+			
 			const username = newState.member.user.tag;
 			const channelName = newState.channel.name;
 			console.log(`[VOICE] ${username} joined ${channelName}`);
