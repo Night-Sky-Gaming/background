@@ -17,18 +17,18 @@ module.exports = {
 		}
 
 		try {
-			// Send the /bump command
-			await channel.send('/bump');
-			console.log('[BUMP] Manual bump command executed');
+			// Send a reminder to bump (bots cannot invoke other bots' slash commands)
+			await channel.send('🔔 **Bump Reminder**: Please run </bump:947088344167366698> to bump the server!');
+			console.log('[BUMP] Manual bump reminder sent');
 			
 			await interaction.reply({
-				content: '✅ Bump command sent to bot-dev-commands!',
+				content: '✅ Bump reminder sent to bot-dev-commands!',
 				flags: MessageFlags.Ephemeral,
 			});
 		} catch (error) {
-			console.error('[BUMP] Error sending bump command:', error);
+			console.error('[BUMP] Error sending bump reminder:', error);
 			await interaction.reply({
-				content: '❌ Failed to send bump command.',
+				content: '❌ Failed to send bump reminder.',
 				flags: MessageFlags.Ephemeral,
 			});
 		}

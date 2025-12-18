@@ -70,10 +70,11 @@ function scheduleNextBump() {
 		
 		if (channel) {
 			try {
-				await channel.send('/bump');
-				console.log(`[AUTO-BUMP] Bump command sent (+${randomSeconds}s delay)`);
+				// Send reminder to bump (bots cannot invoke other bots' slash commands)
+				await channel.send('🔔 **Bump Reminder**: Please run </bump:947088344167366698> to bump the server!');
+				console.log(`[AUTO-BUMP] Bump reminder sent (+${randomSeconds}s delay)`);
 			} catch (error) {
-				console.error('[AUTO-BUMP] Error sending bump command:', error);
+				console.error('[AUTO-BUMP] Error sending bump reminder:', error);
 			}
 		} else {
 			console.error('[AUTO-BUMP] Could not find bot-dev-commands channel');
