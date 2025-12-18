@@ -184,7 +184,7 @@ function scheduleWeeklyActivityCheck() {
 }
 
 // Start schedulers when bot is ready
-client.once('ready', () => {
+client.once('clientReady', () => {
 	scheduleNextBump();
 	scheduleWeeklyActivityCheck();
 });
