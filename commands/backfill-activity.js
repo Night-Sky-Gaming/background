@@ -42,7 +42,7 @@ module.exports = {
 				`Are you sure you want to continue?`,
 			components: [row],
 			flags: MessageFlags.Ephemeral,
-			fetchReply: true,
+			withResponse: true,
 		});
 		
 		// Wait for button interaction
