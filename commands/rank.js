@@ -35,6 +35,26 @@ module.exports = {
 		const emptyBars = progressBarLength - filledBars;
 		const progressBar = '█'.repeat(filledBars) + '░'.repeat(emptyBars);
 
+		// Check for inactivity warning
+		const now = Date.now();
+		const sevenDays = 7 * 24 * 60 * 60 * 1000;
+		const lastActivity = userData.last_activity || 0;
+		let inactivityWarning = '';
+		
+		if (lastActivity === 0) {
+			// User has never had their activity tracked
+			inactivityWarning = '\n\n*Note: Activity tracking is now enabled. Stay active to avoid XP reduction!*';
+		} else if (now - lastActivity >= sevenDays) {
+			// User is currently inactive
+			inactivityWarning = '\n\n*⚠️ You have been inactive for 7+ days. Your XP may be reduced soon!*';
+		} else {
+			// Calculate days until potential reduction
+			const daysInactive = Math.floor((now - lastActivity) / (24 * 60 * 60 * 1000));
+			if (daysInactive >= 5) {
+				inactivityWarning = `\n\n*You have been inactive for ${daysInactive} day(s). Send a message to stay active!*`;
+			}
+		}
+
 		// Create embed
 		const embed = new EmbedBuilder()
 			.setColor(0x5865f2)
@@ -50,7 +70,7 @@ module.exports = {
 				},
 				{
 					name: '📈 Progress to Next Level',
-					value: `${progressBar} ${progressPercent}%\n${xpProgress.toLocaleString()} / ${xpNeeded.toLocaleString()} XP`,
+					value: `${progressBar} ${progressPercent}%\n${xpProgress.toLocaleString()} / ${xpNeeded.toLocaleString()} XP${inactivityWarning}`,
 				},
 			)
 			.setTimestamp();

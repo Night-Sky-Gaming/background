@@ -15,6 +15,7 @@ db.exec(`
 		last_message INTEGER DEFAULT 0,
 		voice_join_time INTEGER DEFAULT 0,
 		voice_total_time INTEGER DEFAULT 0,
+		last_activity INTEGER DEFAULT 0,
 		UNIQUE(user_id, guild_id)
 	)
 `);
@@ -34,15 +35,26 @@ try {
 	// Column already exists, ignore error
 }
 
+// Migration: Add last_activity column if it doesn't exist
+try {
+	db.exec(`ALTER TABLE users ADD COLUMN last_activity INTEGER DEFAULT 0`);
+	console.log('Added last_activity column');
+} catch (error) {
+	// Column already exists, ignore error
+}
+
 // Prepared statements for better performance
 const statements = {
 	getUser: db.prepare('SELECT * FROM users WHERE user_id = ? AND guild_id = ?'),
-	createUser: db.prepare('INSERT OR IGNORE INTO users (id, user_id, guild_id, xp, level, last_message, voice_join_time, voice_total_time) VALUES (?, ?, ?, 0, 1, 0, 0, 0)'),
+	createUser: db.prepare('INSERT OR IGNORE INTO users (id, user_id, guild_id, xp, level, last_message, voice_join_time, voice_total_time, last_activity) VALUES (?, ?, ?, 0, 1, 0, 0, 0, 0)'),
 	updateUser: db.prepare('UPDATE users SET xp = ?, level = ?, last_message = ? WHERE user_id = ? AND guild_id = ?'),
+	updateUserWithActivity: db.prepare('UPDATE users SET xp = ?, level = ?, last_message = ?, last_activity = ? WHERE user_id = ? AND guild_id = ?'),
 	updateVoiceJoinTime: db.prepare('UPDATE users SET voice_join_time = ? WHERE user_id = ? AND guild_id = ?'),
 	updateVoiceStats: db.prepare('UPDATE users SET voice_total_time = ?, xp = ?, level = ?, voice_join_time = 0 WHERE user_id = ? AND guild_id = ?'),
 	getLeaderboard: db.prepare('SELECT * FROM users WHERE guild_id = ? ORDER BY xp DESC LIMIT ?'),
 	getUserRank: db.prepare('SELECT COUNT(*) + 1 as rank FROM users WHERE guild_id = ? AND xp > (SELECT xp FROM users WHERE user_id = ? AND guild_id = ?)'),
+	getAllUsersInGuild: db.prepare('SELECT * FROM users WHERE guild_id = ?'),
+	updateUserXP: db.prepare('UPDATE users SET xp = ?, level = ? WHERE user_id = ? AND guild_id = ?'),
 };
 
 // Helper functions
@@ -130,10 +142,52 @@ function getVoiceTimeStats(userId, guildId) {
 	};
 }
 
+// Update user with activity tracking
+function updateUserWithActivity(userId, guildId, xp, level, lastMessage, lastActivity) {
+	statements.updateUserWithActivity.run(xp, level, lastMessage, lastActivity, userId, guildId);
+}
+
+// Get all users in a guild
+function getAllUsersInGuild(guildId) {
+	return statements.getAllUsersInGuild.all(guildId);
+}
+
+// Check and apply inactivity XP reduction
+function checkInactivityAndReduce(userId, guildId) {
+	const userData = getUser(userId, guildId);
+	const now = Date.now();
+	const sevenDays = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+	
+	// If last_activity is 0 (default/never set), don't reduce XP
+	if (userData.last_activity === 0) {
+		return { reduced: false, oldXp: userData.xp, newXp: userData.xp };
+	}
+	
+	// Check if user has been inactive for 7 days
+	if (now - userData.last_activity >= sevenDays) {
+		const oldXp = userData.xp;
+		const newXp = Math.floor(userData.xp * 0.85); // Reduce by 15%
+		const newLevel = calculateLevel(newXp);
+		
+		statements.updateUserXP.run(newXp, newLevel, userId, guildId);
+		
+		return { reduced: true, oldXp, newXp, oldLevel: userData.level, newLevel };
+	}
+	
+	return { reduced: false, oldXp: userData.xp, newXp: userData.xp };
+}
+
+// Update last activity timestamp
+function updateLastActivity(userId, guildId, timestamp) {
+	const userData = getUser(userId, guildId);
+	statements.updateUserWithActivity.run(userData.xp, userData.level, userData.last_message, timestamp, userId, guildId);
+}
+
 module.exports = {
 	db,
 	getUser,
 	updateUser,
+	updateUserWithActivity,
 	getLeaderboard,
 	getUserRank,
 	calculateLevel,
@@ -142,4 +196,7 @@ module.exports = {
 	updateVoiceTime,
 	formatVoiceTime,
 	getVoiceTimeStats,
+	getAllUsersInGuild,
+	checkInactivityAndReduce,
+	updateLastActivity,
 };
