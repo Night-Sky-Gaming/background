@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -12,7 +12,7 @@ module.exports = {
 		if (!channel) {
 			return interaction.reply({
 				content: '❌ Could not find the bot-dev-commands channel.',
-				ephemeral: true,
+				flags: MessageFlags.Ephemeral,
 			});
 		}
 
@@ -23,13 +23,13 @@ module.exports = {
 			
 			await interaction.reply({
 				content: '✅ Bump command sent to bot-dev-commands!',
-				ephemeral: true,
+				flags: MessageFlags.Ephemeral,
 			});
 		} catch (error) {
 			console.error('[BUMP] Error sending bump command:', error);
 			await interaction.reply({
 				content: '❌ Failed to send bump command.',
-				ephemeral: true,
+				flags: MessageFlags.Ephemeral,
 			});
 		}
 	},
