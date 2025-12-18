@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 const { getAllUsersInGuild, checkInactivityAndReduce } = require('../database.js');
 
 module.exports = {
@@ -7,7 +7,7 @@ module.exports = {
 		.setDescription('Manually check for inactive users and reduce XP')
 		.setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 	async execute(interaction) {
-		await interaction.deferReply({ ephemeral: true });
+		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
 		const guildId = interaction.guild.id;
 		const allUsers = getAllUsersInGuild(guildId);
