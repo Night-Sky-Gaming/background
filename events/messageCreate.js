@@ -47,8 +47,8 @@ module.exports = {
 	// Check if user leveled up
 	if (newLevel > oldLevel) {
 		try {
-			// Assign '+' role at level 5
-			if (newLevel === 5) {
+			// Assign '+' role at level 3
+			if (newLevel === 3) {
 				const role = message.guild.roles.cache.find((r) => r.name === '+');
 				if (role) {
 					try {

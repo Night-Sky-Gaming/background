@@ -84,8 +84,8 @@ module.exports = {
 					try {
 						const member = await newState.guild.members.fetch(userId);
 
-						// Assign '+' role at level 5
-						if (result.newLevel === 5) {
+						// Assign '+' role at level 3
+						if (result.newLevel === 3) {
 							const role = newState.guild.roles.cache.find(
 								(r) => r.name === '+',
 							);
