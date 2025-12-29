@@ -46,6 +46,7 @@ module.exports = {
 
 				if (!member) {
 					// User is no longer in the server
+					console.log(`[PLUS-ROLE-CHECK] User ${user.user_id} (Level ${user.level}) is no longer in the server - skipping`);
 					errors++;
 					continue;
 				}
