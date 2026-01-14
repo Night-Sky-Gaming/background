@@ -56,12 +56,29 @@ module.exports = {
 				(member) => !member.user.bot,
 			);
 			
-			// If exactly one person is left, they are now alone - reset their tracking
+			// If exactly one person is left, they are now alone
 			if (remainingMembers.size === 1) {
 				const aloneUser = remainingMembers.first();
 				const aloneSessionKey = `${guildId}-${aloneUser.id}`;
+				const aloneUserData = getUser(aloneUser.id, guildId);
+				
+				// If they were with others and have a join time, award XP for the time with others
+				if (wasEverWithOthers.get(aloneSessionKey) && aloneUserData.voice_join_time > 0) {
+					const now = Date.now();
+					const timeWithOthers = now - aloneUserData.voice_join_time;
+					
+					// Award XP for the time they were with others
+					const result = updateVoiceTime(aloneUser.id, guildId, timeWithOthers, false);
+					
+					// Reset their join time to now (so alone time isn't counted)
+					setVoiceJoinTime(aloneUser.id, guildId, now);
+					
+					const timeInMinutes = (timeWithOthers / (1000 * 60)).toFixed(2);
+					console.log(`[VOICE] ${aloneUser.user.tag} is now alone in ${oldState.channel.name}, awarded ${result.xpGain} XP for ${timeInMinutes} minutes with others`);
+				}
+				
+				// Mark them as alone going forward
 				wasEverWithOthers.set(aloneSessionKey, false);
-				console.log(`[VOICE] ${aloneUser.user.tag} is now alone in ${oldState.channel.name}, XP tracking reset`);
 			}
 
 			// Only process if they have a join time recorded
