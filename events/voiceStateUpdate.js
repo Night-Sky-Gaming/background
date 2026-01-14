@@ -1,9 +1,10 @@
-const { Events } = require('discord.js');
+const { Events, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const {
 	getUser,
 	setVoiceJoinTime,
 	updateVoiceTime,
 	updateLastActivity,
+	getNotificationPreference,
 } = require('../database.js');
 
 // Track if users were ever with others during their voice session
@@ -111,46 +112,65 @@ module.exports = {
 
 				// Check if user leveled up
 				if (result.newLevel > result.oldLevel) {
-					try {
-						const member = await newState.guild.members.fetch(userId);
+					// Check if user wants notifications
+					const notificationsEnabled = getNotificationPreference(userId, guildId);
+					if (!notificationsEnabled) {
+						console.log(`[VOICE LEVELUP] ${username} leveled up but has notifications disabled`);
+					} else {
+						try {
+							const member = await newState.guild.members.fetch(userId);
 
-						// Assign '+' role at level 3
-						if (result.newLevel === 3) {
-							const role = newState.guild.roles.cache.find(
-								(r) => r.name === '+',
-							);
-							if (role) {
-								try {
-									await member.roles.add(role);
-									await member.send(
-										`🎉 Congratulations! You've reached **Level ${result.newLevel}** from voice chat and earned the **${role.name}** role in **${newState.guild.name}**!`,
-									);
+							// Create button to disable notifications
+							const disableButton = new ButtonBuilder()
+								.setCustomId(`disable_notifications:${guildId}`)
+								.setLabel('Disable Notifications')
+								.setStyle(ButtonStyle.Secondary)
+								.setEmoji('🔕');
+
+							const row = new ActionRowBuilder().addComponents(disableButton);
+
+							// Assign '+' role at level 3
+							if (result.newLevel === 3) {
+								const role = newState.guild.roles.cache.find(
+									(r) => r.name === '+',
+								);
+								if (role) {
+									try {
+										await member.roles.add(role);
+										await member.send({
+											content: `🎉 Congratulations! You've reached **Level ${result.newLevel}** from voice chat and earned the **${role.name}** role in **${newState.guild.name}**!`,
+											components: [row],
+										});
+									}
+									catch (roleError) {
+										console.error('Error assigning + role:', roleError);
+										await member.send({
+											content: `🎉 Congratulations! You've reached **Level ${result.newLevel}** from voice chat in **${newState.guild.name}**! (Unable to assign role)`,
+											components: [row],
+										});
+									}
 								}
-								catch (roleError) {
-									console.error('Error assigning + role:', roleError);
-									await member.send(
-										`🎉 Congratulations! You've reached **Level ${result.newLevel}** from voice chat in **${newState.guild.name}**! (Unable to assign role)`,
+								else {
+									console.warn(
+										'Role "+" not found in guild:',
+										newState.guild.name,
 									);
+									await member.send({
+										content: `🎉 Congratulations! You've reached **Level ${result.newLevel}** from voice chat in **${newState.guild.name}**! (Role "+" not found)`,
+										components: [row],
+									});
 								}
 							}
 							else {
-								console.warn(
-									'Role "+" not found in guild:',
-									newState.guild.name,
-								);
-								await member.send(
-									`🎉 Congratulations! You've reached **Level ${result.newLevel}** from voice chat in **${newState.guild.name}**! (Role "+" not found)`,
-								);
+								await member.send({
+									content: `🎉 Congratulations! You've reached **Level ${result.newLevel}** from voice chat in **${newState.guild.name}**!`,
+									components: [row],
+								});
 							}
 						}
-						else {
-							await member.send(
-								`🎉 Congratulations! You've reached **Level ${result.newLevel}** from voice chat in **${newState.guild.name}**!`,
-							);
+						catch (error) {
+							console.error('Error sending voice level up message:', error);
 						}
-					}
-					catch (error) {
-						console.error('Error sending voice level up message:', error);
 					}
 				}
 			}

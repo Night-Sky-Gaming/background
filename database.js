@@ -43,6 +43,14 @@ try {
 	// Column already exists, ignore error
 }
 
+// Migration: Add notifications_enabled column if it doesn't exist
+try {
+	db.exec(`ALTER TABLE users ADD COLUMN notifications_enabled INTEGER DEFAULT 1`);
+	console.log('Added notifications_enabled column');
+} catch (error) {
+	// Column already exists, ignore error
+}
+
 // Prepared statements for better performance
 const statements = {
 	getUser: db.prepare('SELECT * FROM users WHERE user_id = ? AND guild_id = ?'),
@@ -55,6 +63,7 @@ const statements = {
 	getUserRank: db.prepare('SELECT COUNT(*) + 1 as rank FROM users WHERE guild_id = ? AND xp > (SELECT xp FROM users WHERE user_id = ? AND guild_id = ?)'),
 	getAllUsersInGuild: db.prepare('SELECT * FROM users WHERE guild_id = ?'),
 	updateUserXP: db.prepare('UPDATE users SET xp = ?, level = ? WHERE user_id = ? AND guild_id = ?'),
+	updateNotificationPreference: db.prepare('UPDATE users SET notifications_enabled = ? WHERE user_id = ? AND guild_id = ?'),
 };
 
 // Helper functions
@@ -183,6 +192,18 @@ function updateLastActivity(userId, guildId, timestamp) {
 	statements.updateUserWithActivity.run(userData.xp, userData.level, userData.last_message, timestamp, userId, guildId);
 }
 
+// Get notification preference
+function getNotificationPreference(userId, guildId) {
+	const userData = getUser(userId, guildId);
+	return userData.notifications_enabled === 1;
+}
+
+// Set notification preference
+function setNotificationPreference(userId, guildId, enabled) {
+	getUser(userId, guildId); // Ensure user exists
+	statements.updateNotificationPreference.run(enabled ? 1 : 0, userId, guildId);
+}
+
 module.exports = {
 	db,
 	getUser,
@@ -199,4 +220,6 @@ module.exports = {
 	getAllUsersInGuild,
 	checkInactivityAndReduce,
 	updateLastActivity,
+	getNotificationPreference,
+	setNotificationPreference,
 };

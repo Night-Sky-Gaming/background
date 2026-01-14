@@ -1,5 +1,5 @@
-const { Events } = require('discord.js');
-const { getUser, updateUserWithActivity, calculateLevel } = require('../database.js');
+const { Events, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { getUser, updateUserWithActivity, calculateLevel, getNotificationPreference } = require('../database.js');
 
 // XP settings
 // 1 XP per message
@@ -46,7 +46,23 @@ module.exports = {
 
 	// Check if user leveled up
 	if (newLevel > oldLevel) {
+		// Check if user wants notifications
+		const notificationsEnabled = getNotificationPreference(userId, guildId);
+		if (!notificationsEnabled) {
+			console.log(`[LEVELUP] ${message.author.tag} leveled up but has notifications disabled`);
+			return;
+		}
+
 		try {
+			// Create button to disable notifications
+			const disableButton = new ButtonBuilder()
+				.setCustomId(`disable_notifications:${guildId}`)
+				.setLabel('Disable Notifications')
+				.setStyle(ButtonStyle.Secondary)
+				.setEmoji('🔕');
+
+			const row = new ActionRowBuilder().addComponents(disableButton);
+
 			// Assign '+' role at level 3
 			if (newLevel === 3) {
 				const role = message.guild.roles.cache.find((r) => r.name === '+');
@@ -54,28 +70,32 @@ module.exports = {
 					try {
 						const member = await message.guild.members.fetch(userId);
 						await member.roles.add(role);
-						await message.author.send(
-							`🎉 Congratulations! You've reached **Level ${newLevel}** and earned the **${role.name}** role in **${message.guild.name}**!`,
-						);
+						await message.author.send({
+							content: `🎉 Congratulations! You've reached **Level ${newLevel}** and earned the **${role.name}** role in **${message.guild.name}**!`,
+							components: [row],
+						});
 					}
 					catch (roleError) {
 						console.error('Error assigning + role:', roleError);
-						await message.author.send(
-							`🎉 Congratulations! You've reached **Level ${newLevel}** in **${message.guild.name}**! (Unable to assign role)`,
-						);
+						await message.author.send({
+							content: `🎉 Congratulations! You've reached **Level ${newLevel}** in **${message.guild.name}**! (Unable to assign role)`,
+							components: [row],
+						});
 					}
 				}
 				else {
 					console.warn('Role "+" not found in guild:', message.guild.name);
-					await message.author.send(
-						`🎉 Congratulations! You've reached **Level ${newLevel}** in **${message.guild.name}**! (Role "+" not found)`,
-					);
+					await message.author.send({
+						content: `🎉 Congratulations! You've reached **Level ${newLevel}** in **${message.guild.name}**! (Role "+" not found)`,
+						components: [row],
+					});
 				}
 			}
 			else {
-				await message.author.send(
-					`🎉 Congratulations! You've reached **Level ${newLevel}** in **${message.guild.name}**!`,
-				);
+				await message.author.send({
+					content: `🎉 Congratulations! You've reached **Level ${newLevel}** in **${message.guild.name}**!`,
+					components: [row],
+				});
 			}
 		}
 		catch (error) {

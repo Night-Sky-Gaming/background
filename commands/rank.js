@@ -1,5 +1,5 @@
-const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
-const { getUser, getUserRank, xpForNextLevel } = require('../database.js');
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { getUser, getUserRank, xpForNextLevel, getNotificationPreference } = require('../database.js');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -55,6 +55,12 @@ module.exports = {
 			}
 		}
 
+		// Check notification preference
+		const notificationsEnabled = getNotificationPreference(targetUser.id, guildId);
+		const notificationStatus = notificationsEnabled 
+			? '\n\n🔔 *Notifications: Enabled*' 
+			: '\n\n🔕 *Notifications: Disabled*';
+
 		// Create embed
 		const embed = new EmbedBuilder()
 			.setColor(0x5865f2)
@@ -70,13 +76,27 @@ module.exports = {
 				},
 				{
 					name: '📈 Progress to Next Level',
-					value: `${progressBar} ${progressPercent}%\n${xpProgress.toLocaleString()} / ${xpNeeded.toLocaleString()} XP${inactivityWarning}`,
+					value: `${progressBar} ${progressPercent}%\n${xpProgress.toLocaleString()} / ${xpNeeded.toLocaleString()} XP${inactivityWarning}${notificationStatus}`,
 				},
 			)
 			.setTimestamp();
 
 		try {
-			await interaction.user.send({ embeds: [embed] });
+			const messageOptions = { embeds: [embed] };
+
+			// Only add button if it's the user checking their own rank
+			if (targetUser.id === interaction.user.id) {
+				const toggleButton = new ButtonBuilder()
+					.setCustomId(notificationsEnabled ? `disable_notifications:${guildId}` : `enable_notifications:${guildId}`)
+					.setLabel(notificationsEnabled ? 'Disable Notifications' : 'Enable Notifications')
+					.setStyle(notificationsEnabled ? ButtonStyle.Secondary : ButtonStyle.Primary)
+					.setEmoji(notificationsEnabled ? '🔕' : '🔔');
+
+				const row = new ActionRowBuilder().addComponents(toggleButton);
+				messageOptions.components = [row];
+			}
+
+			await interaction.user.send(messageOptions);
 			const isOtherUser = targetUser.id !== interaction.user.id;
 			const message = isOtherUser
 				? `I've sent ${targetUser.username}'s rank info to your DMs! 📈`
