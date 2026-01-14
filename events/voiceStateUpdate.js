@@ -51,6 +51,19 @@ module.exports = {
 		else if (oldState.channelId && !newState.channelId) {
 			const userData = getUser(userId, guildId);
 
+			// Check if anyone is left alone in the old channel after this user leaves
+			const remainingMembers = oldState.channel.members.filter(
+				(member) => !member.user.bot,
+			);
+			
+			// If exactly one person is left, they are now alone - reset their tracking
+			if (remainingMembers.size === 1) {
+				const aloneUser = remainingMembers.first();
+				const aloneSessionKey = `${guildId}-${aloneUser.id}`;
+				wasEverWithOthers.set(aloneSessionKey, false);
+				console.log(`[VOICE] ${aloneUser.user.tag} is now alone in ${oldState.channel.name}, XP tracking reset`);
+			}
+
 			// Only process if they have a join time recorded
 			if (userData.voice_join_time > 0) {
 				const now = Date.now();
