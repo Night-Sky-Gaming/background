@@ -2,8 +2,8 @@ const { Events } = require('discord.js');
 
 const REGION_ROLES = {
 	'🇪🇺': 'Europe',
-	'�': 'Asia',
-	'�🇺🇸': 'North America',
+	'🌏': 'Asia',
+	'🇺🇸': 'North America',
 	'🇧🇷': 'South America',
 	'🌍': 'Africa',
 	'🦘': 'Oceania',
