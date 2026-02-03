@@ -2,6 +2,7 @@ const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('disc
 
 const REGION_ROLES = {
 	'🇪🇺': 'Europe',
+	'🌏': 'Asia',
 	'🇺🇸': 'North America',
 	'🇧🇷': 'South America',
 	'🌍': 'Africa',
@@ -33,6 +34,7 @@ module.exports = {
 				.setDescription(
 					'React to this message to get your region role!\n\n' +
 					'🇪🇺 - Europe\n' +
+					'🌏 - Asia\n' +
 					'🇺🇸 - North America\n' +
 					'🇧🇷 - South America\n' +
 					'🌍 - Africa\n' +
@@ -41,16 +43,39 @@ module.exports = {
 				)
 				.setFooter({ text: 'Select your region to connect with nearby members!' });
 
-			// Send the message
-			const message = await channel.send({ embeds: [embed] });
-
-			// Add reactions
-			for (const emoji of Object.keys(REGION_ROLES)) {
-				await message.react(emoji);
+			// Try to find existing region role message
+			let existingMessage = null;
+			const messages = await channel.messages.fetch({ limit: 100 });
+			
+			for (const msg of messages.values()) {
+				if (msg.author.id === interaction.client.user.id && 
+					msg.embeds.length > 0 && 
+					msg.embeds[0].title === '🗺️ Region Roles') {
+					existingMessage = msg;
+					break;
+				}
 			}
 
-			await interaction.editReply(`✅ Region role message posted in <#${REGION_CHANNEL_ID}>!`);
-			console.log('[REGION ROLES] Setup message posted successfully');
+			let message;
+			if (existingMessage) {
+				// Edit the existing message
+				message = await existingMessage.edit({ embeds: [embed] });
+				await interaction.editReply(`✅ Region role message updated in <#${REGION_CHANNEL_ID}>!`);
+				console.log('[REGION ROLES] Setup message updated successfully');
+			} else {
+				// Send a new message if none exists
+				message = await channel.send({ embeds: [embed] });
+				await interaction.editReply(`✅ Region role message posted in <#${REGION_CHANNEL_ID}>!`);
+				console.log('[REGION ROLES] Setup message posted successfully');
+			}
+
+			// Add any missing reactions
+			for (const emoji of Object.keys(REGION_ROLES)) {
+				const existingReaction = message.reactions.cache.get(emoji);
+				if (!existingReaction || !existingReaction.me) {
+					await message.react(emoji);
+				}
+			}
 		} catch (error) {
 			console.error('[REGION ROLES] Error setting up region roles:', error);
 			await interaction.editReply('❌ An error occurred while setting up region roles.');
