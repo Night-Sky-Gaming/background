@@ -140,15 +140,25 @@ function scheduleWeeklyActivityCheck() {
 		}
 		
 		if (reductions.length > 0) {
-			// Create summary message
-			let summary = `**Weekly Activity Check - ${new Date().toLocaleDateString()}**\n\n${reductions.length} user(s) had XP reduced due to inactivity (7+ days):\n\n`;
+			// Create summary messages (split into chunks to avoid Discord's 2000 char limit)
+			const header = `**Weekly Activity Check - ${new Date().toLocaleDateString()}**\n\n${reductions.length} user(s) had XP reduced due to inactivity (7+ days):\n\n`;
+			const messages = [header];
+			let currentMessage = 0;
 			
 			for (const reduction of reductions) {
 				const member = await guild.members.fetch(reduction.userId).catch(() => null);
 				const username = member ? member.user.username : `User ${reduction.userId}`;
-				summary += `• **${username}**: ${reduction.oldXp.toLocaleString()} → ${reduction.newXp.toLocaleString()} XP (-${reduction.xpLost.toLocaleString()})\n`;
+				let entry = `• **${username}**: ${reduction.oldXp.toLocaleString()} → ${reduction.newXp.toLocaleString()} XP (-${reduction.xpLost.toLocaleString()})\n`;
 				if (reduction.oldLevel !== reduction.newLevel) {
-					summary += `  Level ${reduction.oldLevel} → Level ${reduction.newLevel}\n`;
+					entry += `  Level ${reduction.oldLevel} → Level ${reduction.newLevel}\n`;
+				}
+				
+				// Check if adding this entry would exceed Discord's 2000 char limit
+				if ((messages[currentMessage] + entry).length > 1900) {
+					currentMessage++;
+					messages[currentMessage] = entry;
+				} else {
+					messages[currentMessage] += entry;
 				}
 			}
 			
@@ -157,7 +167,9 @@ function scheduleWeeklyActivityCheck() {
 			const logsChannel = client.channels.cache.get(logsChannelId);
 			
 			if (logsChannel) {
-				await logsChannel.send(summary);
+				for (const message of messages) {
+					await logsChannel.send(message);
+				}
 			} else {
 				console.error('[ACTIVITY CHECK] Could not find other-logs channel');
 			}
@@ -168,7 +180,9 @@ function scheduleWeeklyActivityCheck() {
 			
 			if (admin) {
 				try {
-					await admin.send(summary);
+					for (const message of messages) {
+						await admin.send(message);
+					}
 				} catch (error) {
 					console.error('[ACTIVITY CHECK] Could not DM admin:', error);
 				}

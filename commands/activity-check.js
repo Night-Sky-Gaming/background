@@ -38,15 +38,25 @@ module.exports = {
 			});
 		}
 
-		// Create summary message
-		let summary = `**Activity Check Results**\n\n${reductions.length} user(s) had XP reduced due to inactivity:\n\n`;
+		// Create summary messages (split into chunks to avoid Discord's 2000 char limit)
+		const header = `**Activity Check Results**\n\n${reductions.length} user(s) had XP reduced due to inactivity:\n\n`;
+		const messages = [header];
+		let currentMessage = 0;
 		
 		for (const reduction of reductions) {
 			const member = await interaction.guild.members.fetch(reduction.userId).catch(() => null);
 			const username = member ? member.user.username : `User ${reduction.userId}`;
-			summary += `• **${username}**: ${reduction.oldXp.toLocaleString()} → ${reduction.newXp.toLocaleString()} XP (-${reduction.xpLost.toLocaleString()})\n`;
+			let entry = `• **${username}**: ${reduction.oldXp.toLocaleString()} → ${reduction.newXp.toLocaleString()} XP (-${reduction.xpLost.toLocaleString()})\n`;
 			if (reduction.oldLevel !== reduction.newLevel) {
-				summary += `  Level ${reduction.oldLevel} → Level ${reduction.newLevel}\n`;
+				entry += `  Level ${reduction.oldLevel} → Level ${reduction.newLevel}\n`;
+			}
+			
+			// Check if adding this entry would exceed Discord's 2000 char limit
+			if ((messages[currentMessage] + entry).length > 1900) {
+				currentMessage++;
+				messages[currentMessage] = entry;
+			} else {
+				messages[currentMessage] += entry;
 			}
 		}
 
@@ -55,7 +65,9 @@ module.exports = {
 		const logsChannel = interaction.client.channels.cache.get(logsChannelId);
 		
 		if (logsChannel) {
-			await logsChannel.send(summary);
+			for (const message of messages) {
+				await logsChannel.send(message);
+			}
 		}
 
 		// DM the admin
@@ -64,7 +76,9 @@ module.exports = {
 		
 		if (admin) {
 			try {
-				await admin.send(summary);
+				for (const message of messages) {
+					await admin.send(message);
+				}
 			} catch (error) {
 				console.error('[ACTIVITY CHECK] Could not DM admin:', error);
 			}
